@@ -1,5 +1,5 @@
 # blog-hacks
-Contains random hacks for the blog
+Contains random hacks for my [blog](https://davidjarman.net/).
 
 ## Tools
 
