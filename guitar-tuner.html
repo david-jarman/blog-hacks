@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Guitar Tuner</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-slate-50 flex flex-col items-center min-h-screen py-8">
+  <h1 class="text-3xl font-bold mb-6">Guitar Tuner</h1>
+  <p class="mb-8 text-gray-700 text-center">
+    Pluck a string and the tuner will show how close you are to standard tuning (E A D G B E).
+  </p>
+  <div id="tuner" class="grid grid-cols-1 gap-4 w-full max-w-md"></div>
+  <div id="status" class="mt-8 text-gray-500">Waiting for mic permission…</div>
+  <div class="mt-8 text-xs text-gray-400 text-center max-w-xs">
+    No sound? Make sure to allow microphone access. Works best in a quiet room. This tuner is for standard tuning only.
+  </div>
+  <script>
+    const STRINGS = [
+      { note: "E", freq: 82.41 },   // 6th
+      { note: "A", freq: 110.00 },  // 5th
+      { note: "D", freq: 146.83 },  // 4th
+      { note: "G", freq: 196.00 },  // 3rd
+      { note: "B", freq: 246.94 },  // 2nd
+      { note: "E", freq: 329.63 },  // 1st
+    ];
+    function freqDiff(current, target) {
+      return Math.round((current - target) * 10) / 10;
+    }
+    function getClosestString(freq) {
+      let min = Infinity, best = null;
+      STRINGS.forEach((s, i) => {
+        const d = Math.abs(freq - s.freq);
+        if (d < min) {
+          min = d;
+          best = { idx: i, ...s };
+        }
+      });
+      return best;
+    }
+    function renderTuner(highlight, diff, detectedFreq) {
+      const container = document.getElementById('tuner');
+      container.innerHTML = '';
+      STRINGS.forEach((s, i) => {
+        const isHighlight = highlight === i;
+        const box = document.createElement('div');
+        box.className = `flex justify-between items-center px-6 py-4 rounded-2xl shadow-lg transition border ${isHighlight ? "border-blue-500 bg-blue-100" : "border-slate-200 bg-white"}`;
+        box.innerHTML = `
+          <span class="text-2xl font-mono">${s.note}</span>
+          <span class="text-base text-gray-500">${s.freq} Hz</span>
+          ${isHighlight && diff !== null ? `<span class="ml-4 text-lg font-bold">
+            ${diff > 0 ? "+" : ""}${diff} Hz
+            <span class="ml-2 text-sm text-gray-600">
+              ${Math.abs(diff) < 1 ? "(In Tune!)" : diff > 0 ? "(Too High)" : "(Too Low)"}
+            </span>
+          </span>` : ''}
+        `;
+        container.appendChild(box);
+      });
+      const status = document.getElementById('status');
+      status.innerHTML = `${detectedFreq ? `Detected frequency: <b>${detectedFreq.toFixed(1)} Hz</b><br/>` : ''}Listening…`;
+    }
+    function renderStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+    // Pitch detection
+    function autoCorrelate(buf, sampleRate) {
+      let SIZE = buf.length;
+      let rms = 0;
+      for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+      rms = Math.sqrt(rms / SIZE);
+      if (rms < 0.01) return null; // too quiet
+      let r1 = 0, r2 = SIZE - 1, thres = 0.2;
+      for (let i = 0; i < SIZE / 2; i++) {
+        if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+      }
+      for (let i = 1; i < SIZE / 2; i++) {
+        if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+      }
+      buf = buf.slice(r1, r2); SIZE = buf.length;
+      let c = new Array(SIZE).fill(0);
+      for (let i = 0; i < SIZE; i++) {
+        for (let j = 0; j < SIZE - i; j++) {
+          c[i] = c[i] + buf[j] * buf[j + i];
+        }
+      }
+      let d = 0;
+      while (c[d] > c[d + 1]) d++;
+      let maxval = -1, maxpos = -1;
+      for (let i = d; i < SIZE; i++) {
+        if (c[i] > maxval) {
+          maxval = c[i];
+          maxpos = i;
+        }
+      }
+      let T0 = maxpos;
+      return sampleRate / T0;
+    }
+    async function startTuner() {
+      let mediaStream, audioCtx, analyser, dataArray, source;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        renderStatus('Microphone access denied');
+        return;
+      }
+      audioCtx = new window.AudioContext();
+      analyser = audioCtx.createAnalyser();
+      source = audioCtx.createMediaStreamSource(mediaStream);
+      source.connect(analyser);
+      analyser.fftSize = 2048;
+      dataArray = new Float32Array(analyser.fftSize);
+      function listen() {
+        analyser.getFloatTimeDomainData(dataArray);
+        const freq = autoCorrelate(dataArray, audioCtx.sampleRate);
+        let highlight = null, diff = null;
+        if (freq && freq > 50 && freq < 400) {
+          const best = getClosestString(freq);
+          highlight = best.idx;
+          diff = freqDiff(freq, best.freq);
+          renderTuner(highlight, diff, freq);
+        } else {
+          renderTuner(null, null, null);
+        }
+        requestAnimationFrame(listen);
+      }
+      listen();
+    }
+    renderTuner(null, null, null);
+    startTuner();
+  </script>
+</body>
+</html>
