@@ -9,24 +9,65 @@
     button { padding: 0.5em 1em; font-size: 1em; }
     .section { margin-bottom: 2em; }
 
-    /* ✅ Make long content wrap nicely on screen */
+    /* Container scroll so it doesn't monopolize the page */
     #clipboardData {
-      overflow-wrap: anywhere;   /* allow breaking very long "words" */
-      word-break: break-word;    /* older fallback */
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fafafa;
+      max-height: 340px;         /* visible height */
+      overflow-y: auto;          /* vertical scrollbar */
+      overflow-wrap: anywhere;   /* wrap long tokens */
+      word-break: break-word;
+      padding: 0.5rem;
     }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      position: sticky;          /* stays visible while scrolling within the container */
+      top: 0;
+      background: #fafafa;
+      padding-bottom: .5rem;
+      z-index: 1;
+    }
+    .tab {
+      border: 1px solid #ddd;
+      background: #fff;
+      padding: .35rem .6rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      user-select: none;
+    }
+    .tab.active {
+      background: #e6f0ff;
+      border-color: #b3ccff;
+      font-weight: 600;
+    }
+
+    .panel { display: none; padding-top: .25rem; }
+    .panel.active { display: block; }
+
+    /* Individual items inside a panel */
+    .item { margin-bottom: .75rem; }
+    .item > .label { font-weight: 600; font-size: 0.9rem; margin-bottom: .25rem; }
+
     pre {
       background: #f4f4f4;
       padding: 1em;
       border-radius: 8px;
-      margin: 0.5em 0;
-      white-space: pre-wrap;     /* preserve newlines, but allow wrapping */
-      overflow-wrap: anywhere;   /* break very long tokens (URLs, base64, etc.) */
-      word-break: break-word;    /* fallback */
-      max-width: 100%;           /* don’t overflow container */
+      margin: 0.25em 0 0;
+      white-space: pre-wrap;     /* preserve newlines but wrap */
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      max-height: 240px;         /* each long block scrolls independently */
+      overflow: auto;
+      max-width: 100%;
     }
 
-    /* Make images and textarea responsive */
-    img { max-width: 100%; height: auto; }
+    img { max-width: 100%; height: auto; border-radius: 6px; }
     textarea { width: 100%; box-sizing: border-box; }
   </style>
 </head>
@@ -45,13 +86,95 @@
 
   <div class="section">
     <h2>Clipboard Data</h2>
-    <div id="clipboardData"></div>
+    <div id="clipboardData">
+      <!-- Tabs + panels will be injected here -->
+    </div>
   </div>
 
   <script>
-    async function showClipboard() {
-      const output = document.getElementById('clipboardData');
+    const output = document.getElementById('clipboardData');
+
+    const sanitize = (s) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+    function makeTabs(typeMap) {
+      // Clear and build tabs + panels
       output.innerHTML = '';
+      const tabs = document.createElement('div');
+      tabs.className = 'tabs';
+
+      const panelsFrag = document.createDocumentFragment();
+      const typeKeys = Array.from(typeMap.keys());
+
+      typeKeys.forEach((type, idx) => {
+        const btn = document.createElement('button');
+        const count = typeMap.get(type).length;
+        btn.className = 'tab' + (idx === 0 ? ' active' : '');
+        btn.textContent = `${type} (${count})`;
+        btn.dataset.for = `panel-${idx}`;
+        tabs.appendChild(btn);
+
+        const panel = document.createElement('div');
+        panel.className = 'panel' + (idx === 0 ? ' active' : '');
+        panel.id = `panel-${idx}`;
+
+        // Fill panel with items
+        typeMap.get(type).forEach((entry, i) => {
+          const block = document.createElement('div');
+          block.className = 'item';
+          const label = document.createElement('div');
+          label.className = 'label';
+          label.textContent = `Item ${i + 1}`;
+
+          block.appendChild(label);
+
+          if (entry.kind === 'text') {
+            const pre = document.createElement('pre');
+            pre.innerHTML = sanitize(entry.value);
+            block.appendChild(pre);
+          } else if (entry.kind === 'image') {
+            const img = document.createElement('img');
+            img.src = entry.url;
+            img.alt = `Clipboard Image (${type})`;
+            img.onload = () => URL.revokeObjectURL(entry.url);
+            block.appendChild(img);
+          } else {
+            const info = document.createElement('div');
+            info.innerHTML = `<i>Binary data (${entry.size} bytes)</i>`;
+            block.appendChild(info);
+          }
+
+          panel.appendChild(block);
+        });
+
+        panelsFrag.appendChild(panel);
+      });
+
+      output.appendChild(tabs);
+      output.appendChild(panelsFrag);
+
+      // Tab behavior
+      tabs.addEventListener('click', (e) => {
+        if (!(e.target instanceof HTMLElement) || !e.target.classList.contains('tab')) return;
+        const targetId = e.target.dataset.for;
+
+        // Activate clicked tab
+        tabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+
+        // Show matching panel
+        output.querySelectorAll('.panel').forEach(p => {
+          p.classList.toggle('active', p.id === targetId);
+        });
+      });
+    }
+
+    function groupByType() {
+      return new Map(); // type -> [{kind, value/url/size}, ...]
+    }
+
+    async function showClipboard() {
+      output.innerHTML = ''; // reset
 
       if (!navigator.clipboard) {
         output.innerHTML = '<b>Your browser does not support the Clipboard API.</b>';
@@ -66,40 +189,69 @@
         return;
       }
 
+      const typeMap = groupByType();
+
       for (const item of items) {
         for (const type of item.types) {
           const blob = await item.getType(type);
           if (type.startsWith('text/')) {
             const value = await blob.text();
-            output.innerHTML += `
-              <b>Type:</b> ${type}<br>
-              <pre>${value.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`;
+            if (!typeMap.has(type)) typeMap.set(type, []);
+            typeMap.get(type).push({ kind: 'text', value });
           } else if (type.startsWith('image/')) {
             const url = URL.createObjectURL(blob);
-            output.innerHTML += `<b>Type:</b> ${type}<br><img src="${url}" alt="Clipboard Image"><br>`;
+            if (!typeMap.has(type)) typeMap.set(type, []);
+            typeMap.get(type).push({ kind: 'image', url });
           } else {
-            output.innerHTML += `<b>Type:</b> ${type}<br><i>Binary data (${blob.size} bytes)</i><br>`;
+            if (!typeMap.has(type)) typeMap.set(type, []);
+            typeMap.get(type).push({ kind: 'binary', size: blob.size });
           }
         }
+      }
+
+      if (typeMap.size === 0) {
+        output.innerHTML = '<i>No readable clipboard items.</i>';
+      } else {
+        makeTabs(typeMap);
       }
     }
 
     document.getElementById('readClipboard').addEventListener('click', showClipboard);
 
-    document.getElementById('clipboardPaste').addEventListener('paste', e => {
-      const output = document.getElementById('clipboardData');
-      let out = '';
+    // Paste handler -> also grouped into tabs
+    document.getElementById('clipboardPaste').addEventListener('paste', (e) => {
+      const typeMap = groupByType();
+      const promises = [];
+
       for (const item of e.clipboardData.items) {
-        out += `<b>Type:</b> ${item.type || 'unknown'}<br>`;
-        if (item.type && item.type.startsWith('text/')) {
-          item.getAsString(val => {
-            output.innerHTML += out +
-              `<pre>${val.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`;
-          });
+        const type = item.type || 'unknown';
+        if (!typeMap.has(type)) typeMap.set(type, []);
+
+        if (type.startsWith('text/')) {
+          // Wrap getAsString in a Promise to await all before rendering
+          promises.push(new Promise(resolve => {
+            item.getAsString(val => {
+              typeMap.get(type).push({ kind: 'text', value: val });
+              resolve();
+            });
+          }));
+        } else if (type.startsWith('image/')) {
+          const file = item.getAsFile();
+          const url = URL.createObjectURL(file);
+          typeMap.get(type).push({ kind: 'image', url });
         } else {
-          output.innerHTML += out + `<i>Non-text data</i><br>`;
+          const file = item.getAsFile();
+          typeMap.get(type).push({ kind: 'binary', size: file ? file.size : 0 });
         }
       }
+
+      Promise.all(promises).then(() => {
+        if (typeMap.size === 0) {
+          output.innerHTML = '<i>No readable clipboard items.</i>';
+        } else {
+          makeTabs(typeMap);
+        }
+      });
     });
   </script>
 </body>
