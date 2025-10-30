@@ -19,4 +19,4 @@ Link: [clipboard-inspector](https://hacks.davidjarman.net/clipboard-inspector)
 
 Encode / decode base64 messages
 
-Link: [clipboard-inspector](https://hacks.davidjarman.net/base64)
+Link: [base64](https://hacks.davidjarman.net/base64)
