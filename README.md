@@ -14,3 +14,9 @@ Link: [guitar-tuner](https://hacks.davidjarman.net/guitar-tuner)
 Inspect the contents of your clipboard to troubleshoot issues with copy/paste
 
 Link: [clipboard-inspector](https://hacks.davidjarman.net/clipboard-inspector)
+
+### Base64 Tools
+
+Encode / decode base64 messages
+
+Link: [clipboard-inspector](https://hacks.davidjarman.net/base64)
