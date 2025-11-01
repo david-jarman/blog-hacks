@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tour de France 2025 Stages</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-50 p-4">
+  <h1 class="text-2xl font-bold mb-4">Tour de France 2025 Stages</h1>
+  <button id="toggle" class="mb-4 px-4 py-2 bg-blue-500 text-white rounded">Toggle Imperial</button>
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white rounded shadow">
+      <thead>
+        <tr class="bg-gray-200 text-left">
+          <th class="p-2">Stage</th>
+          <th class="p-2">Start</th>
+          <th class="p-2">Finish</th>
+          <th class="p-2">Distance</th>
+          <th class="p-2">Elevation Gain</th>
+          <th class="p-2">KOM Points</th>
+          <th class="p-2">Sprint Points</th>
+        </tr>
+      </thead>
+      <tbody id="stage-body"></tbody>
+    </table>
+  </div>
+<script>
+let stages = [
+  {stage:1,start:"Lille Métropole",finish:"Lille Métropole",distance:184.9,elevation:null,kom:null,sprint:null},
+  {stage:2,start:"Lauwin-Planque",finish:"Boulogne-sur-Mer",distance:209.1,elevation:null,kom:null,sprint:null},
+  {stage:3,start:"Valenciennes",finish:"Dunkerque",distance:178.3,elevation:null,kom:null,sprint:null},
+  {stage:4,start:"Amiens Métropole",finish:"Rouen",distance:174.2,elevation:null,kom:null,sprint:null},
+  {stage:5,start:"Caen",finish:"Caen",distance:33,elevation:null,kom:null,sprint:null},
+  {stage:6,start:"Bayeux",finish:"Vire Normandie",distance:201.5,elevation:null,kom:null,sprint:null},
+  {stage:7,start:"Saint-Malo",finish:"Mûr-de-Bretagne Guerlédan",distance:197,elevation:null,kom:null,sprint:null},
+  {stage:8,start:"Saint-Méen-le-Grand",finish:"Laval Espace Mayenne",distance:171.4,elevation:null,kom:null,sprint:null},
+  {stage:9,start:"Chinon",finish:"Châteauroux",distance:174.1,elevation:null,kom:null,sprint:null},
+  {stage:10,start:"Ennezat",finish:"Le Mont-Dore Puy de Sancy",distance:165.3,elevation:null,kom:null,sprint:null},
+  {stage:11,start:"Toulouse",finish:"Toulouse",distance:156.8,elevation:null,kom:null,sprint:null},
+  {stage:12,start:"Auch",finish:"Hautacam",distance:180.6,elevation:null,kom:null,sprint:null},
+  {stage:13,start:"Loudenvielle",finish:"Peyragudes",distance:10.9,elevation:null,kom:null,sprint:null},
+  {stage:14,start:"Pau",finish:"Luchon-Superbagnères",distance:182.6,elevation:null,kom:null,sprint:null},
+  {stage:15,start:"Muret",finish:"Carcassonne",distance:169.3,elevation:null,kom:null,sprint:null},
+  {stage:16,start:"Montpellier",finish:"Mont Ventoux",distance:171.5,elevation:null,kom:null,sprint:null},
+  {stage:17,start:"Bollène",finish:"Valence",distance:160.4,elevation:null,kom:null,sprint:null},
+  {stage:18,start:"Vif",finish:"Courchevel Col de la Loze",distance:171.5,elevation:null,kom:null,sprint:null},
+  {stage:19,start:"Albertville",finish:"La Plagne",distance:129.9,elevation:null,kom:null,sprint:null},
+  {stage:20,start:"Nantua",finish:"Pontarlier",distance:184.2,elevation:null,kom:null,sprint:null},
+  {stage:21,start:"Mantes-la-Ville",finish:"Paris Champs-Élysées",distance:132.3,elevation:null,kom:null,sprint:null},
+];
+fetch('stages.json')
+  .then(r => r.ok ? r.json() : null)
+  .then(data => { if(data) { stages = data; render(); } });
+let imperial = false;
+function render(){
+  const tbody = document.getElementById('stage-body');
+  tbody.innerHTML='';
+  stages.forEach(s=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="p-2 border">${s.stage}</td>
+      <td class="p-2 border">${s.start}</td>
+      <td class="p-2 border">${s.finish}</td>
+      <td class="p-2 border">${formatDist(s.distance)}</td>
+      <td class="p-2 border">${formatElev(s.elevation)}</td>
+      <td class="p-2 border">${s.kom ?? 'N/A'}</td>
+      <td class="p-2 border">${s.sprint ?? 'N/A'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+function formatDist(km){
+  if(km==null) return 'N/A';
+  return imperial ? (km*0.621371).toFixed(1)+' mi' : km+' km';
+}
+function formatElev(m){
+  if(m==null) return 'N/A';
+  return imperial ? Math.round(m*3.28084)+' ft' : m+' m';
+}
+document.getElementById('toggle').addEventListener('click',()=>{
+  imperial = !imperial;
+  document.getElementById('toggle').textContent = imperial ? 'Toggle Metric' : 'Toggle Imperial';
+  render();
+});
+render();
+</script>
+</body>
+</html>
