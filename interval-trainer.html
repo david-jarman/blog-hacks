@@ -167,6 +167,16 @@
 
     async function initAudioContext() {
       if (!audioCtx) {
+        // Set audio session type to playback so it works in iOS silent mode
+        if ('audioSession' in navigator) {
+          try {
+            await navigator.audioSession.setType('playback');
+            console.log('Audio session type set to playback');
+          } catch (e) {
+            console.log('Could not set audio session type:', e);
+          }
+        }
+
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         console.log('AudioContext created, state:', audioCtx.state);
       }
