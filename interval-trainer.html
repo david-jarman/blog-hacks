@@ -165,9 +165,13 @@
       answers: []
     };
 
-    function initAudioContext() {
+    async function initAudioContext() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      // Resume the context on iOS (required for autoplay policy)
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
       }
     }
 
@@ -187,8 +191,8 @@
       return blueShades[bluesiness] || null;
     }
 
-    function playTone(frequency, duration = 1.0, startTime = 0) {
-      initAudioContext();
+    async function playTone(frequency, duration = 1.0, startTime = 0) {
+      await initAudioContext();
 
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
@@ -243,13 +247,13 @@
       }
     }
 
-    function playBothNotes() {
+    async function playBothNotes() {
       if (selectedInterval !== null) {
         const rootFreq = NOTE_FREQUENCIES[selectedRoot];
         const intervalFreq = getFrequencyForInterval(selectedRoot, INTERVALS[selectedInterval].semitones);
 
         // Play both notes simultaneously
-        playTone(rootFreq, 1.5);
+        await playTone(rootFreq, 1.5);
         playTone(intervalFreq, 1.5);
       }
     }
@@ -351,12 +355,12 @@
       });
     }
 
-    function playQuizInterval() {
+    async function playQuizInterval() {
       const correctIntervalIndex = quizState.questions[quizState.currentQuestionIndex];
       const rootFreq = NOTE_FREQUENCIES[selectedRoot];
       const intervalFreq = getFrequencyForInterval(selectedRoot, INTERVALS[correctIntervalIndex].semitones);
 
-      playTone(rootFreq, 1.5);
+      await playTone(rootFreq, 1.5);
       playTone(intervalFreq, 1.5);
     }
 
