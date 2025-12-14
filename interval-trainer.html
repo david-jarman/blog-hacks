@@ -21,19 +21,6 @@
       </div>
     </div>
 
-    <!-- Play Controls -->
-    <div class="flex gap-4 justify-center">
-      <button id="play-root" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:bg-gray-300 disabled:cursor-not-allowed">
-        Play Root Note
-      </button>
-      <button id="play-interval" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:bg-gray-300 disabled:cursor-not-allowed">
-        Play Interval
-      </button>
-      <button id="play-both" class="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition disabled:bg-gray-300 disabled:cursor-not-allowed">
-        Play Together
-      </button>
-    </div>
-
     <!-- Info Display -->
     <div id="info" class="mt-6 text-center text-gray-600">
       Select an interval to begin
@@ -41,7 +28,7 @@
   </div>
 
   <div class="mt-8 text-xs text-gray-400 text-center max-w-md">
-    Click on intervals to explore different sounds. Use the play buttons to hear them individually or together.
+    Click on intervals to hear them played together with the root note C.
   </div>
 
   <script>
@@ -143,14 +130,17 @@
       } else {
         info.textContent = 'Select an interval to begin';
       }
-      updateButtonStates();
     }
 
-    function updateButtonStates() {
-      const canPlay = selectedInterval !== null;
-      document.getElementById('play-root').disabled = false;
-      document.getElementById('play-interval').disabled = !canPlay;
-      document.getElementById('play-both').disabled = !canPlay;
+    function playBothNotes() {
+      if (selectedInterval !== null) {
+        const rootFreq = NOTE_FREQUENCIES[selectedRoot];
+        const intervalFreq = getFrequencyForInterval(selectedRoot, INTERVALS[selectedInterval].semitones);
+
+        // Play both notes simultaneously
+        playTone(rootFreq, 1.5);
+        playTone(intervalFreq, 1.5);
+      }
     }
 
     function renderIntervals() {
@@ -174,36 +164,12 @@
           selectedInterval = index;
           renderIntervals();
           updateInfo();
+          playBothNotes();
         };
 
         container.appendChild(btn);
       });
     }
-
-    // Play button handlers
-    document.getElementById('play-root').onclick = () => {
-      if (selectedRoot) {
-        playTone(NOTE_FREQUENCIES[selectedRoot]);
-      }
-    };
-
-    document.getElementById('play-interval').onclick = () => {
-      if (selectedRoot && selectedInterval !== null) {
-        const freq = getFrequencyForInterval(selectedRoot, INTERVALS[selectedInterval].semitones);
-        playTone(freq);
-      }
-    };
-
-    document.getElementById('play-both').onclick = () => {
-      if (selectedRoot && selectedInterval !== null) {
-        const rootFreq = NOTE_FREQUENCIES[selectedRoot];
-        const intervalFreq = getFrequencyForInterval(selectedRoot, INTERVALS[selectedInterval].semitones);
-
-        // Play both notes simultaneously
-        playTone(rootFreq, 1.5);
-        playTone(intervalFreq, 1.5);
-      }
-    };
 
     // Initialize
     renderIntervals();
