@@ -43,8 +43,8 @@
       </div>
 
       <!-- Info Display -->
-      <div id="info" class="mt-6 text-center text-gray-600">
-        Select an interval to begin
+      <div id="info" class="mt-8 p-6 text-center bg-blue-50 border-2 border-blue-200 rounded-xl">
+        <div class="text-gray-600">Select an interval to begin</div>
       </div>
     </div>
   </div>
@@ -245,19 +245,19 @@
         const targetNote = getIntervalNote(selectedRoot, interval.semitones);
 
         info.innerHTML = `
-          <div class="text-lg">
+          <div class="text-2xl mb-2">
             <span class="font-bold">${selectedRoot}</span> →
             <span class="font-bold">${targetNote}</span>
           </div>
-          <div class="text-sm text-gray-500 mt-1">
+          <div class="text-base text-gray-500 mb-4">
             ${interval.name} (${interval.semitones} semitones)
           </div>
-          <div class="text-sm text-gray-600 mt-2 italic">
+          <div class="text-xl font-semibold text-blue-900 leading-relaxed">
             ${interval.description}
           </div>
         `;
       } else {
-        info.textContent = 'Select an interval to begin';
+        info.innerHTML = '<div class="text-gray-600">Select an interval to begin</div>';
       }
     }
 
