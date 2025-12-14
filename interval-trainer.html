@@ -8,22 +8,98 @@
 </head>
 <body class="bg-slate-50 flex flex-col items-center min-h-screen py-8">
   <h1 class="text-3xl font-bold mb-6">Music Interval Trainer</h1>
-  <p class="mb-8 text-gray-700 text-center max-w-lg">
-    Select an interval to hear what different intervals sound like from the root note C. Build your ear training by comparing intervals.
-  </p>
 
-  <div class="bg-white rounded-2xl shadow-lg p-8 max-w-2xl w-full">
-    <!-- Interval Selection -->
-    <div class="mb-6">
-      <label class="block text-lg font-semibold mb-3">Interval</label>
-      <div id="intervals" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <!-- Populated by JavaScript -->
+  <!-- Mode Toggle -->
+  <div class="mb-6 flex gap-2">
+    <button id="listenModeBtn" class="px-6 py-2 rounded-lg font-semibold bg-green-500 text-white">
+      Listen
+    </button>
+    <button id="quizModeBtn" class="px-6 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300">
+      Quiz
+    </button>
+  </div>
+
+  <!-- Listen Mode -->
+  <div id="listenMode" class="w-full max-w-2xl">
+    <p class="mb-8 text-gray-700 text-center max-w-lg mx-auto">
+      Select an interval to hear what different intervals sound like from the root note C. Build your ear training by comparing intervals.
+    </p>
+
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+      <!-- Interval Selection -->
+      <div class="mb-6">
+        <label class="block text-lg font-semibold mb-3">Interval</label>
+        <div id="intervals" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Info Display -->
+      <div id="info" class="mt-6 text-center text-gray-600">
+        Select an interval to begin
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Mode -->
+  <div id="quizMode" class="w-full max-w-2xl hidden">
+    <p class="mb-8 text-gray-700 text-center max-w-lg mx-auto">
+      Test your ear training! Listen to each interval and identify it correctly.
+    </p>
+
+    <!-- Quiz Progress -->
+    <div id="quizContainer" class="bg-white rounded-2xl shadow-lg p-8">
+      <div class="text-center mb-6">
+        <div class="text-sm text-gray-500 mb-2">Question <span id="questionNumber">1</span> of 15</div>
+        <div class="text-xs text-gray-400">Score: <span id="score">0</span>/<span id="answered">0</span></div>
+      </div>
+
+      <!-- Play Button -->
+      <div class="text-center mb-6">
+        <button id="playQuizBtn" class="px-8 py-4 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 text-lg">
+          Play Interval
+        </button>
+      </div>
+
+      <!-- Answer Options -->
+      <div class="mb-6">
+        <label class="block text-lg font-semibold mb-3 text-center">Which interval is this?</label>
+        <div id="quizAnswers" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Feedback -->
+      <div id="feedback" class="text-center text-lg font-semibold min-h-8">
       </div>
     </div>
 
-    <!-- Info Display -->
-    <div id="info" class="mt-6 text-center text-gray-600">
-      Select an interval to begin
+    <!-- Results Screen -->
+    <div id="resultsContainer" class="bg-white rounded-2xl shadow-lg p-8 hidden">
+      <h2 class="text-2xl font-bold text-center mb-4">Quiz Complete!</h2>
+      <div class="text-center mb-6">
+        <div class="text-5xl font-bold mb-2">
+          <span id="finalScore">0</span>/15
+        </div>
+        <div class="text-xl text-gray-600">
+          <span id="finalPercentage">0</span>% Correct
+        </div>
+      </div>
+
+      <!-- Results Breakdown -->
+      <div id="resultsBreakdown" class="mb-6 max-h-64 overflow-y-auto">
+        <!-- Populated by JavaScript -->
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-4 justify-center">
+        <button id="retryQuizBtn" class="px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600">
+          Try Again
+        </button>
+        <button id="backToListenBtn" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600">
+          Back to Listen Mode
+        </button>
+      </div>
     </div>
   </div>
 
@@ -70,6 +146,15 @@
     let selectedRoot = 'C';
     let selectedInterval = null;
     let audioCtx = null;
+    let currentMode = 'listen'; // 'listen' or 'quiz'
+
+    // Quiz state
+    let quizState = {
+      questions: [],
+      currentQuestionIndex: 0,
+      score: 0,
+      answers: []
+    };
 
     function initAudioContext() {
       if (!audioCtx) {
@@ -174,9 +259,179 @@
       });
     }
 
+    // Quiz functions
+    function generateQuizQuestions() {
+      // Ensure each interval appears at least once
+      let questions = [...INTERVALS.map((_, index) => index)];
+
+      // Fill remaining slots randomly to reach 15 questions
+      while (questions.length < 15) {
+        questions.push(Math.floor(Math.random() * INTERVALS.length));
+      }
+
+      // Shuffle the questions
+      for (let i = questions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questions[i], questions[j]] = [questions[j], questions[i]];
+      }
+
+      return questions;
+    }
+
+    function startQuiz() {
+      quizState = {
+        questions: generateQuizQuestions(),
+        currentQuestionIndex: 0,
+        score: 0,
+        answers: []
+      };
+
+      document.getElementById('quizContainer').classList.remove('hidden');
+      document.getElementById('resultsContainer').classList.add('hidden');
+
+      renderQuizQuestion();
+    }
+
+    function renderQuizQuestion() {
+      const questionNum = quizState.currentQuestionIndex + 1;
+      document.getElementById('questionNumber').textContent = questionNum;
+      document.getElementById('score').textContent = quizState.score;
+      document.getElementById('answered').textContent = quizState.answers.length;
+      document.getElementById('feedback').innerHTML = '';
+
+      // Re-enable play button for new question
+      const playBtn = document.getElementById('playQuizBtn');
+      playBtn.disabled = false;
+      playBtn.className = 'px-8 py-4 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 text-lg';
+
+      // Render answer buttons
+      const answersContainer = document.getElementById('quizAnswers');
+      answersContainer.innerHTML = '';
+
+      INTERVALS.forEach((interval, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'px-4 py-2 rounded-lg transition text-left bg-gray-100 hover:bg-gray-200';
+        btn.innerHTML = `
+          <div class="font-semibold">${interval.name}</div>
+          <div class="text-xs opacity-75">${interval.semitones} semitones</div>
+        `;
+        btn.onclick = () => checkAnswer(index);
+        answersContainer.appendChild(btn);
+      });
+    }
+
+    function playQuizInterval() {
+      const correctIntervalIndex = quizState.questions[quizState.currentQuestionIndex];
+      const rootFreq = NOTE_FREQUENCIES[selectedRoot];
+      const intervalFreq = getFrequencyForInterval(selectedRoot, INTERVALS[correctIntervalIndex].semitones);
+
+      playTone(rootFreq, 1.5);
+      playTone(intervalFreq, 1.5);
+    }
+
+    function checkAnswer(selectedIndex) {
+      const correctIndex = quizState.questions[quizState.currentQuestionIndex];
+      const isCorrect = selectedIndex === correctIndex;
+
+      // Disable play button after answer is selected
+      const playBtn = document.getElementById('playQuizBtn');
+      playBtn.disabled = true;
+      playBtn.className = 'px-8 py-4 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed text-lg';
+
+      // Store the answer
+      quizState.answers.push({
+        questionIndex: quizState.currentQuestionIndex,
+        correctInterval: correctIndex,
+        selectedInterval: selectedIndex,
+        isCorrect: isCorrect
+      });
+
+      if (isCorrect) {
+        quizState.score++;
+      }
+
+      // Show feedback
+      const feedback = document.getElementById('feedback');
+      if (isCorrect) {
+        feedback.innerHTML = '<span class="text-green-600">✓ Correct!</span>';
+      } else {
+        feedback.innerHTML = `<span class="text-red-600">✗ Incorrect. That was a ${INTERVALS[correctIndex].name}</span>`;
+      }
+
+      // Move to next question or show results
+      setTimeout(() => {
+        quizState.currentQuestionIndex++;
+
+        if (quizState.currentQuestionIndex >= 15) {
+          showResults();
+        } else {
+          renderQuizQuestion();
+        }
+      }, 1500);
+    }
+
+    function showResults() {
+      document.getElementById('quizContainer').classList.add('hidden');
+      document.getElementById('resultsContainer').classList.remove('hidden');
+
+      const finalScore = quizState.score;
+      const percentage = Math.round((finalScore / 15) * 100);
+
+      document.getElementById('finalScore').textContent = finalScore;
+      document.getElementById('finalPercentage').textContent = percentage;
+
+      // Show breakdown
+      const breakdown = document.getElementById('resultsBreakdown');
+      breakdown.innerHTML = '<div class="text-sm font-semibold mb-2 text-gray-700">Question Breakdown:</div>';
+
+      quizState.answers.forEach((answer, index) => {
+        const correctInterval = INTERVALS[answer.correctInterval];
+        const selectedInterval = INTERVALS[answer.selectedInterval];
+
+        const item = document.createElement('div');
+        item.className = `text-sm py-2 px-3 mb-2 rounded ${answer.isCorrect ? 'bg-green-50' : 'bg-red-50'}`;
+        item.innerHTML = `
+          <span class="font-semibold">Q${index + 1}:</span>
+          ${answer.isCorrect
+            ? `<span class="text-green-700">✓ ${correctInterval.name}</span>`
+            : `<span class="text-red-700">✗ ${correctInterval.name}</span> <span class="text-gray-600">(you said ${selectedInterval.name})</span>`
+          }
+        `;
+        breakdown.appendChild(item);
+      });
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+
+      // Update button styles
+      const listenBtn = document.getElementById('listenModeBtn');
+      const quizBtn = document.getElementById('quizModeBtn');
+
+      if (mode === 'listen') {
+        listenBtn.className = 'px-6 py-2 rounded-lg font-semibold bg-green-500 text-white';
+        quizBtn.className = 'px-6 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300';
+        document.getElementById('listenMode').classList.remove('hidden');
+        document.getElementById('quizMode').classList.add('hidden');
+      } else {
+        quizBtn.className = 'px-6 py-2 rounded-lg font-semibold bg-green-500 text-white';
+        listenBtn.className = 'px-6 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300';
+        document.getElementById('listenMode').classList.add('hidden');
+        document.getElementById('quizMode').classList.remove('hidden');
+        startQuiz();
+      }
+    }
+
     // Initialize
     renderIntervals();
     updateInfo();
+
+    // Event listeners for mode switching
+    document.getElementById('listenModeBtn').addEventListener('click', () => switchMode('listen'));
+    document.getElementById('quizModeBtn').addEventListener('click', () => switchMode('quiz'));
+    document.getElementById('playQuizBtn').addEventListener('click', playQuizInterval);
+    document.getElementById('retryQuizBtn').addEventListener('click', startQuiz);
+    document.getElementById('backToListenBtn').addEventListener('click', () => switchMode('listen'));
   </script>
 </body>
 </html>
