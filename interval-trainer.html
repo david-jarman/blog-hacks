@@ -168,10 +168,13 @@
     async function initAudioContext() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('AudioContext created, state:', audioCtx.state);
       }
       // Resume the context on iOS (required for autoplay policy)
       if (audioCtx.state === 'suspended') {
+        console.log('AudioContext suspended, attempting to resume...');
         await audioCtx.resume();
+        console.log('AudioContext resumed, state:', audioCtx.state);
       }
     }
 
@@ -193,6 +196,7 @@
 
     async function playTone(frequency, duration = 1.0, startTime = 0) {
       await initAudioContext();
+      console.log('Playing tone at', frequency, 'Hz, AudioContext state:', audioCtx.state);
 
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
