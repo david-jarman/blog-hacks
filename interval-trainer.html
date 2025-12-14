@@ -52,19 +52,19 @@
 
     // Intervals in semitones
     const INTERVALS = [
-      { name: 'Unison', semitones: 0 },
-      { name: 'Minor 2nd', semitones: 1 },
-      { name: 'Major 2nd', semitones: 2 },
-      { name: 'Minor 3rd', semitones: 3 },
-      { name: 'Major 3rd', semitones: 4 },
-      { name: 'Perfect 4th', semitones: 5 },
-      { name: 'Tritone (♭5)', semitones: 6 },
-      { name: 'Perfect 5th', semitones: 7 },
-      { name: 'Minor 6th', semitones: 8 },
-      { name: 'Major 6th', semitones: 9 },
-      { name: 'Minor 7th', semitones: 10 },
-      { name: 'Major 7th', semitones: 11 },
-      { name: 'Octave', semitones: 12 }
+      { name: 'Unison', semitones: 0, description: 'Same note - perfect harmony' },
+      { name: 'Minor 2nd', semitones: 1, description: 'Tense, dissonant - like the "Jaws" theme' },
+      { name: 'Major 2nd', semitones: 2, description: 'Bright step up - "Happy Birthday" opening' },
+      { name: 'Minor 3rd', semitones: 3, description: 'Sad or melancholic sound - minor chords' },
+      { name: 'Major 3rd', semitones: 4, description: 'Happy, bright - major chords' },
+      { name: 'Perfect 4th', semitones: 5, description: 'Stable, open - "Here Comes the Bride"' },
+      { name: 'Tritone (♭5)', semitones: 6, description: 'Unsettling, diabolic - "The Simpsons" theme' },
+      { name: 'Perfect 5th', semitones: 7, description: 'Strong, powerful - "Star Wars" theme' },
+      { name: 'Minor 6th', semitones: 8, description: 'Sad, yearning - "The Entertainer" opening' },
+      { name: 'Major 6th', semitones: 9, description: 'Sweet, romantic - "My Bonnie Lies Over the Ocean"' },
+      { name: 'Minor 7th', semitones: 10, description: 'Bluesy, unresolved tension' },
+      { name: 'Major 7th', semitones: 11, description: 'Dreamy, jazzy - wants to resolve up' },
+      { name: 'Octave', semitones: 12, description: 'Same note higher - "Somewhere Over the Rainbow"' }
     ];
 
     let selectedRoot = 'C';
@@ -125,6 +125,9 @@
           </div>
           <div class="text-sm text-gray-500 mt-1">
             ${interval.name} (${interval.semitones} semitones)
+          </div>
+          <div class="text-sm text-gray-600 mt-2 italic">
+            ${interval.description}
           </div>
         `;
       } else {
