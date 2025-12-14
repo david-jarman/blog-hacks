@@ -200,13 +200,11 @@
       if (selectedInterval !== null) {
         const interval = INTERVALS[selectedInterval];
         const targetNote = getIntervalNote(selectedRoot, interval.semitones);
-        const rootFreq = NOTE_FREQUENCIES[selectedRoot].toFixed(2);
-        const targetFreq = getFrequencyForInterval(selectedRoot, interval.semitones).toFixed(2);
 
         info.innerHTML = `
           <div class="text-lg">
-            <span class="font-bold">${selectedRoot}</span> (${rootFreq} Hz) →
-            <span class="font-bold">${targetNote}</span> (${targetFreq} Hz)
+            <span class="font-bold">${selectedRoot}</span> →
+            <span class="font-bold">${targetNote}</span>
           </div>
           <div class="text-sm text-gray-500 mt-1">
             ${interval.name} (${interval.semitones} semitones)
