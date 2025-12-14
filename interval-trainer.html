@@ -26,6 +26,14 @@
     </p>
 
     <div class="bg-white rounded-2xl shadow-lg p-8">
+      <!-- Blue Notes Toggle -->
+      <div class="mb-6 flex items-center justify-center">
+        <label class="flex items-center cursor-pointer">
+          <input type="checkbox" id="blueNotesToggle" class="mr-2 w-4 h-4">
+          <span class="text-sm font-medium text-gray-700">Highlight Blue Notes</span>
+        </label>
+      </div>
+
       <!-- Interval Selection -->
       <div class="mb-6">
         <label class="block text-lg font-semibold mb-3">Interval</label>
@@ -128,25 +136,26 @@
 
     // Intervals in semitones
     const INTERVALS = [
-      { name: 'Unison', semitones: 0, description: 'Same note - perfect harmony' },
-      { name: 'Minor 2nd', semitones: 1, description: 'Tense, dissonant - like the "Jaws" theme' },
-      { name: 'Major 2nd', semitones: 2, description: 'Bright step up - "Happy Birthday" opening' },
-      { name: 'Minor 3rd', semitones: 3, description: 'Sad or melancholic sound - minor chords' },
-      { name: 'Major 3rd', semitones: 4, description: 'Happy, bright - major chords' },
-      { name: 'Perfect 4th', semitones: 5, description: 'Stable, open - "Here Comes the Bride"' },
-      { name: 'Tritone (♭5)', semitones: 6, description: 'Unsettling, diabolic - "The Simpsons" theme' },
-      { name: 'Perfect 5th', semitones: 7, description: 'Strong, powerful - "Star Wars" theme' },
-      { name: 'Minor 6th', semitones: 8, description: 'Sad, yearning - "The Entertainer" opening' },
-      { name: 'Major 6th', semitones: 9, description: 'Sweet, romantic - "My Bonnie Lies Over the Ocean"' },
-      { name: 'Minor 7th', semitones: 10, description: 'Bluesy, unresolved tension' },
-      { name: 'Major 7th', semitones: 11, description: 'Dreamy, jazzy - wants to resolve up' },
-      { name: 'Octave', semitones: 12, description: 'Same note higher - "Somewhere Over the Rainbow"' }
+      { name: 'Unison', semitones: 0, description: 'Same note - perfect harmony', bluesiness: 0 },
+      { name: 'Minor 2nd', semitones: 1, description: 'Tense, dissonant - like the "Jaws" theme', bluesiness: 0 },
+      { name: 'Major 2nd', semitones: 2, description: 'Bright step up - "Happy Birthday" opening', bluesiness: 0 },
+      { name: 'Minor 3rd', semitones: 3, description: 'Sad or melancholic sound - minor chords', bluesiness: 3 },
+      { name: 'Major 3rd', semitones: 4, description: 'Happy, bright - major chords', bluesiness: 0 },
+      { name: 'Perfect 4th', semitones: 5, description: 'Stable, open - "Here Comes the Bride"', bluesiness: 0 },
+      { name: 'Tritone (♭5)', semitones: 6, description: 'Unsettling, diabolic - "The Simpsons" theme', bluesiness: 4 },
+      { name: 'Perfect 5th', semitones: 7, description: 'Strong, powerful - "Star Wars" theme', bluesiness: 0 },
+      { name: 'Minor 6th', semitones: 8, description: 'Sad, yearning - "The Entertainer" opening', bluesiness: 0 },
+      { name: 'Major 6th', semitones: 9, description: 'Sweet, romantic - "My Bonnie Lies Over the Ocean"', bluesiness: 0 },
+      { name: 'Minor 7th', semitones: 10, description: 'Bluesy, unresolved tension', bluesiness: 3 },
+      { name: 'Major 7th', semitones: 11, description: 'Dreamy, jazzy - wants to resolve up', bluesiness: 0 },
+      { name: 'Octave', semitones: 12, description: 'Same note higher - "Somewhere Over the Rainbow"', bluesiness: 0 }
     ];
 
     let selectedRoot = 'C';
     let selectedInterval = null;
     let audioCtx = null;
     let currentMode = 'listen'; // 'listen' or 'quiz'
+    let showBlueNotes = false;
 
     // Quiz state
     let quizState = {
@@ -160,6 +169,22 @@
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
+    }
+
+    function getBlueColor(bluesiness, isSelected) {
+      if (!showBlueNotes || bluesiness === 0) {
+        return null; // Return null for normal styling
+      }
+
+      // Map bluesiness (1-4) to shades of blue
+      const blueShades = {
+        1: isSelected ? 'bg-blue-300 text-blue-900' : 'bg-blue-100 hover:bg-blue-200 text-blue-800',
+        2: isSelected ? 'bg-blue-400 text-white' : 'bg-blue-200 hover:bg-blue-300 text-blue-900',
+        3: isSelected ? 'bg-blue-600 text-white' : 'bg-blue-400 hover:bg-blue-500 text-white',
+        4: isSelected ? 'bg-blue-800 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+      };
+
+      return blueShades[bluesiness] || null;
     }
 
     function playTone(frequency, duration = 1.0, startTime = 0) {
@@ -236,12 +261,20 @@
       INTERVALS.forEach((interval, index) => {
         const btn = document.createElement('button');
         const isSelected = selectedInterval === index;
+        const blueColor = getBlueColor(interval.bluesiness, isSelected);
 
-        btn.className = `px-4 py-2 rounded-lg transition text-left ${
-          isSelected
-            ? 'bg-green-500 text-white'
-            : 'bg-gray-100 hover:bg-gray-200'
-        }`;
+        let buttonClass;
+        if (blueColor) {
+          buttonClass = `px-4 py-2 rounded-lg transition text-left ${blueColor}`;
+        } else {
+          buttonClass = `px-4 py-2 rounded-lg transition text-left ${
+            isSelected
+              ? 'bg-green-500 text-white'
+              : 'bg-gray-100 hover:bg-gray-200'
+          }`;
+        }
+
+        btn.className = buttonClass;
         btn.innerHTML = `
           <div class="font-semibold">${interval.name}</div>
           <div class="text-xs opacity-75">${interval.semitones} semitones</div>
@@ -430,6 +463,12 @@
     document.getElementById('playQuizBtn').addEventListener('click', playQuizInterval);
     document.getElementById('retryQuizBtn').addEventListener('click', startQuiz);
     document.getElementById('backToListenBtn').addEventListener('click', () => switchMode('listen'));
+
+    // Event listener for blue notes toggle
+    document.getElementById('blueNotesToggle').addEventListener('change', (e) => {
+      showBlueNotes = e.target.checked;
+      renderIntervals();
+    });
   </script>
 </body>
 </html>
