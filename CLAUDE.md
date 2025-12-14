@@ -12,17 +12,6 @@ This repository contains standalone browser-based utility tools for davidjarman.
 - Tools are deployed to GitHub Pages at https://hacks.davidjarman.net/
 - No backend, no frameworks, no build step - pure client-side HTML/CSS/JS
 
-## Current Tools
-
-### guitar-tuner.html
-Browser-based guitar tuner using Web Audio API. Uses autocorrelation pitch detection to identify guitar string frequencies (E A D G B E standard tuning). Requires microphone access.
-
-### clipboard-inspector.html
-Diagnostic tool for examining clipboard contents. Shows all MIME types present in clipboard data via Clipboard API. Useful for debugging copy/paste issues. Displays text, images, and binary data grouped by type with tabbed interface.
-
-### base64.html
-Simple Base64 encoder/decoder with UTF-8 support. Uses btoa/atob with proper Unicode handling via encodeURIComponent/decodeURIComponent.
-
 ## Deployment
 
 Automated via GitHub Actions workflow (.github/workflows/jekyll-gh-pages.yml):
@@ -38,3 +27,13 @@ Since tools are self-contained HTML files with no build process:
 3. Commit and push to main - deployment is automatic
 
 No test commands, no build commands, no package managers needed.
+
+## Adding New Tools
+
+When creating a new tool, ALWAYS:
+1. Create the standalone HTML file in the root directory
+2. Add the tool to README.md following the existing format:
+   - Tool name as heading (###)
+   - Brief description
+   - Link in format: `[tool-name](https://hacks.davidjarman.net/tool-name)`
+3. Test by opening the HTML file directly in browser (use `open` command on macOS)

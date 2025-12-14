@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Interval Trainer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-slate-50 flex flex-col items-center min-h-screen py-8">
+  <h1 class="text-3xl font-bold mb-6">Music Interval Trainer</h1>
+  <p class="mb-8 text-gray-700 text-center max-w-lg">
+    Select a root note and an interval to hear what different intervals sound like. Build your ear training by comparing intervals.
+  </p>
+
+  <div class="bg-white rounded-2xl shadow-lg p-8 max-w-2xl w-full">
+    <!-- Root Note Selection -->
+    <div class="mb-6">
+      <label class="block text-lg font-semibold mb-3">Root Note</label>
+      <div id="root-notes" class="grid grid-cols-7 gap-2">
+        <!-- Populated by JavaScript -->
+      </div>
+    </div>
+
+    <!-- Interval Selection -->
+    <div class="mb-6">
+      <label class="block text-lg font-semibold mb-3">Interval</label>
+      <div id="intervals" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <!-- Populated by JavaScript -->
+      </div>
+    </div>
+
+    <!-- Play Controls -->
+    <div class="flex gap-4 justify-center">
+      <button id="play-root" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:bg-gray-300 disabled:cursor-not-allowed">
+        Play Root Note
+      </button>
+      <button id="play-interval" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:bg-gray-300 disabled:cursor-not-allowed">
+        Play Interval
+      </button>
+      <button id="play-both" class="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition disabled:bg-gray-300 disabled:cursor-not-allowed">
+        Play Together
+      </button>
+    </div>
+
+    <!-- Info Display -->
+    <div id="info" class="mt-6 text-center text-gray-600">
+      Select a root note and interval to begin
+    </div>
+  </div>
+
+  <div class="mt-8 text-xs text-gray-400 text-center max-w-md">
+    Click on notes and intervals to explore different sounds. Use the play buttons to hear them individually or together.
+  </div>
+
+  <script>
+    // Note frequencies in Hz for octave 4 (middle octave)
+    const NOTE_FREQUENCIES = {
+      'C': 261.63,
+      'C#': 277.18,
+      'D': 293.66,
+      'D#': 311.13,
+      'E': 329.63,
+      'F': 349.23,
+      'F#': 369.99,
+      'G': 392.00,
+      'G#': 415.30,
+      'A': 440.00,
+      'A#': 466.16,
+      'B': 493.88
+    };
+
+    const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+    // Intervals in semitones
+    const INTERVALS = [
+      { name: 'Unison', semitones: 0 },
+      { name: 'Minor 2nd', semitones: 1 },
+      { name: 'Major 2nd', semitones: 2 },
+      { name: 'Minor 3rd', semitones: 3 },
+      { name: 'Major 3rd', semitones: 4 },
+      { name: 'Perfect 4th', semitones: 5 },
+      { name: 'Tritone (♭5)', semitones: 6 },
+      { name: 'Perfect 5th', semitones: 7 },
+      { name: 'Minor 6th', semitones: 8 },
+      { name: 'Major 6th', semitones: 9 },
+      { name: 'Minor 7th', semitones: 10 },
+      { name: 'Major 7th', semitones: 11 },
+      { name: 'Octave', semitones: 12 }
+    ];
+
+    let selectedRoot = null;
+    let selectedInterval = null;
+    let audioCtx = null;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(frequency, duration = 1.0, startTime = 0) {
+      initAudioContext();
+
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+
+      const now = audioCtx.currentTime + startTime;
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+      oscillator.start(now);
+      oscillator.stop(now + duration);
+    }
+
+    function getFrequencyForInterval(rootNote, semitones) {
+      const rootFreq = NOTE_FREQUENCIES[rootNote];
+      // Each semitone is a factor of 2^(1/12)
+      return rootFreq * Math.pow(2, semitones / 12);
+    }
+
+    function getIntervalNote(rootNote, semitones) {
+      const rootIndex = NOTES.indexOf(rootNote);
+      const targetIndex = (rootIndex + semitones) % 12;
+      return NOTES[targetIndex];
+    }
+
+    function updateInfo() {
+      const info = document.getElementById('info');
+      if (selectedRoot && selectedInterval !== null) {
+        const interval = INTERVALS[selectedInterval];
+        const targetNote = getIntervalNote(selectedRoot, interval.semitones);
+        const rootFreq = NOTE_FREQUENCIES[selectedRoot].toFixed(2);
+        const targetFreq = getFrequencyForInterval(selectedRoot, interval.semitones).toFixed(2);
+
+        info.innerHTML = `
+          <div class="text-lg">
+            <span class="font-bold">${selectedRoot}</span> (${rootFreq} Hz) →
+            <span class="font-bold">${targetNote}</span> (${targetFreq} Hz)
+          </div>
+          <div class="text-sm text-gray-500 mt-1">
+            ${interval.name} (${interval.semitones} semitones)
+          </div>
+        `;
+      } else if (selectedRoot) {
+        info.textContent = `Root note: ${selectedRoot} - Select an interval`;
+      } else {
+        info.textContent = 'Select a root note and interval to begin';
+      }
+      updateButtonStates();
+    }
+
+    function updateButtonStates() {
+      const canPlay = selectedRoot !== null && selectedInterval !== null;
+      document.getElementById('play-root').disabled = selectedRoot === null;
+      document.getElementById('play-interval').disabled = !canPlay;
+      document.getElementById('play-both').disabled = !canPlay;
+    }
+
+    function renderNotes() {
+      const container = document.getElementById('root-notes');
+      container.innerHTML = '';
+
+      NOTES.forEach(note => {
+        const btn = document.createElement('button');
+        const isSelected = selectedRoot === note;
+        const isBlackKey = note.includes('#');
+
+        btn.className = `px-3 py-2 rounded-lg transition ${
+          isSelected
+            ? 'bg-blue-500 text-white'
+            : isBlackKey
+              ? 'bg-gray-800 text-white hover:bg-gray-700'
+              : 'bg-gray-100 hover:bg-gray-200'
+        }`;
+        btn.textContent = note;
+        btn.onclick = () => {
+          selectedRoot = note;
+          renderNotes();
+          renderIntervals();
+          updateInfo();
+        };
+
+        container.appendChild(btn);
+      });
+    }
+
+    function renderIntervals() {
+      const container = document.getElementById('intervals');
+      container.innerHTML = '';
+
+      INTERVALS.forEach((interval, index) => {
+        const btn = document.createElement('button');
+        const isSelected = selectedInterval === index;
+
+        btn.className = `px-4 py-2 rounded-lg transition text-left ${
+          isSelected
+            ? 'bg-green-500 text-white'
+            : 'bg-gray-100 hover:bg-gray-200'
+        }`;
+        btn.innerHTML = `
+          <div class="font-semibold">${interval.name}</div>
+          <div class="text-xs opacity-75">${interval.semitones} semitones</div>
+        `;
+        btn.onclick = () => {
+          selectedInterval = index;
+          renderIntervals();
+          updateInfo();
+        };
+
+        container.appendChild(btn);
+      });
+    }
+
+    // Play button handlers
+    document.getElementById('play-root').onclick = () => {
+      if (selectedRoot) {
+        playTone(NOTE_FREQUENCIES[selectedRoot]);
+      }
+    };
+
+    document.getElementById('play-interval').onclick = () => {
+      if (selectedRoot && selectedInterval !== null) {
+        const freq = getFrequencyForInterval(selectedRoot, INTERVALS[selectedInterval].semitones);
+        playTone(freq);
+      }
+    };
+
+    document.getElementById('play-both').onclick = () => {
+      if (selectedRoot && selectedInterval !== null) {
+        const rootFreq = NOTE_FREQUENCIES[selectedRoot];
+        const intervalFreq = getFrequencyForInterval(selectedRoot, INTERVALS[selectedInterval].semitones);
+
+        // Play both notes simultaneously
+        playTone(rootFreq, 1.5);
+        playTone(intervalFreq, 1.5);
+      }
+    };
+
+    // Initialize
+    renderNotes();
+    renderIntervals();
+    updateInfo();
+  </script>
+</body>
+</html>

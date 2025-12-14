@@ -20,3 +20,9 @@ Link: [clipboard-inspector](https://hacks.davidjarman.net/clipboard-inspector)
 Encode / decode base64 messages
 
 Link: [base64](https://hacks.davidjarman.net/base64)
+
+### Interval Trainer
+
+Music interval ear training tool. Select a root note and interval to hear what different intervals sound like.
+
+Link: [interval-trainer](https://hacks.davidjarman.net/interval-trainer)
