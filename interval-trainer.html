@@ -58,7 +58,7 @@
     <!-- Quiz Progress -->
     <div id="quizContainer" class="bg-white rounded-2xl shadow-lg p-8">
       <div class="text-center mb-6">
-        <div class="text-sm text-gray-500 mb-2">Question <span id="questionNumber">1</span> of 15</div>
+        <div class="text-sm text-gray-500 mb-2">Question <span id="questionNumber">1</span> of 26</div>
         <div class="text-xs text-gray-400">Score: <span id="score">0</span>/<span id="answered">0</span></div>
       </div>
 
@@ -87,7 +87,7 @@
       <h2 class="text-2xl font-bold text-center mb-4">Quiz Complete!</h2>
       <div class="text-center mb-6">
         <div class="text-5xl font-bold mb-2">
-          <span id="finalScore">0</span>/15
+          <span id="finalScore">0</span>/26
         </div>
         <div class="text-xl text-gray-600">
           <span id="finalPercentage">0</span>% Correct
@@ -310,13 +310,12 @@
 
     // Quiz functions
     function generateQuizQuestions() {
-      // Ensure each interval appears at least once
-      let questions = [...INTERVALS.map((_, index) => index)];
-
-      // Fill remaining slots randomly to reach 15 questions
-      while (questions.length < 15) {
-        questions.push(Math.floor(Math.random() * INTERVALS.length));
-      }
+      // Create each interval exactly twice
+      let questions = [];
+      INTERVALS.forEach((_, index) => {
+        questions.push(index);
+        questions.push(index);
+      });
 
       // Shuffle the questions
       for (let i = questions.length - 1; i > 0; i--) {
@@ -411,7 +410,7 @@
       setTimeout(() => {
         quizState.currentQuestionIndex++;
 
-        if (quizState.currentQuestionIndex >= 15) {
+        if (quizState.currentQuestionIndex >= quizState.questions.length) {
           showResults();
         } else {
           renderQuizQuestion();
@@ -424,7 +423,7 @@
       document.getElementById('resultsContainer').classList.remove('hidden');
 
       const finalScore = quizState.score;
-      const percentage = Math.round((finalScore / 15) * 100);
+      const percentage = Math.round((finalScore / quizState.questions.length) * 100);
 
       document.getElementById('finalScore').textContent = finalScore;
       document.getElementById('finalPercentage').textContent = percentage;
