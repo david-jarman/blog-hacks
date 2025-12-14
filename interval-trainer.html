@@ -9,18 +9,10 @@
 <body class="bg-slate-50 flex flex-col items-center min-h-screen py-8">
   <h1 class="text-3xl font-bold mb-6">Music Interval Trainer</h1>
   <p class="mb-8 text-gray-700 text-center max-w-lg">
-    Select a root note and an interval to hear what different intervals sound like. Build your ear training by comparing intervals.
+    Select an interval to hear what different intervals sound like from the root note C. Build your ear training by comparing intervals.
   </p>
 
   <div class="bg-white rounded-2xl shadow-lg p-8 max-w-2xl w-full">
-    <!-- Root Note Selection -->
-    <div class="mb-6">
-      <label class="block text-lg font-semibold mb-3">Root Note</label>
-      <div id="root-notes" class="grid grid-cols-7 gap-2">
-        <!-- Populated by JavaScript -->
-      </div>
-    </div>
-
     <!-- Interval Selection -->
     <div class="mb-6">
       <label class="block text-lg font-semibold mb-3">Interval</label>
@@ -44,12 +36,12 @@
 
     <!-- Info Display -->
     <div id="info" class="mt-6 text-center text-gray-600">
-      Select a root note and interval to begin
+      Select an interval to begin
     </div>
   </div>
 
   <div class="mt-8 text-xs text-gray-400 text-center max-w-md">
-    Click on notes and intervals to explore different sounds. Use the play buttons to hear them individually or together.
+    Click on intervals to explore different sounds. Use the play buttons to hear them individually or together.
   </div>
 
   <script>
@@ -88,7 +80,7 @@
       { name: 'Octave', semitones: 12 }
     ];
 
-    let selectedRoot = null;
+    let selectedRoot = 'C';
     let selectedInterval = null;
     let audioCtx = null;
 
@@ -133,7 +125,7 @@
 
     function updateInfo() {
       const info = document.getElementById('info');
-      if (selectedRoot && selectedInterval !== null) {
+      if (selectedInterval !== null) {
         const interval = INTERVALS[selectedInterval];
         const targetNote = getIntervalNote(selectedRoot, interval.semitones);
         const rootFreq = NOTE_FREQUENCIES[selectedRoot].toFixed(2);
@@ -148,47 +140,17 @@
             ${interval.name} (${interval.semitones} semitones)
           </div>
         `;
-      } else if (selectedRoot) {
-        info.textContent = `Root note: ${selectedRoot} - Select an interval`;
       } else {
-        info.textContent = 'Select a root note and interval to begin';
+        info.textContent = 'Select an interval to begin';
       }
       updateButtonStates();
     }
 
     function updateButtonStates() {
-      const canPlay = selectedRoot !== null && selectedInterval !== null;
-      document.getElementById('play-root').disabled = selectedRoot === null;
+      const canPlay = selectedInterval !== null;
+      document.getElementById('play-root').disabled = false;
       document.getElementById('play-interval').disabled = !canPlay;
       document.getElementById('play-both').disabled = !canPlay;
-    }
-
-    function renderNotes() {
-      const container = document.getElementById('root-notes');
-      container.innerHTML = '';
-
-      NOTES.forEach(note => {
-        const btn = document.createElement('button');
-        const isSelected = selectedRoot === note;
-        const isBlackKey = note.includes('#');
-
-        btn.className = `px-3 py-2 rounded-lg transition ${
-          isSelected
-            ? 'bg-blue-500 text-white'
-            : isBlackKey
-              ? 'bg-gray-800 text-white hover:bg-gray-700'
-              : 'bg-gray-100 hover:bg-gray-200'
-        }`;
-        btn.textContent = note;
-        btn.onclick = () => {
-          selectedRoot = note;
-          renderNotes();
-          renderIntervals();
-          updateInfo();
-        };
-
-        container.appendChild(btn);
-      });
     }
 
     function renderIntervals() {
@@ -244,7 +206,6 @@
     };
 
     // Initialize
-    renderNotes();
     renderIntervals();
     updateInfo();
   </script>
