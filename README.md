@@ -26,3 +26,9 @@ Link: [base64](https://hacks.davidjarman.net/base64)
 Music interval ear training tool. Select a root note and interval to hear what different intervals sound like.
 
 Link: [interval-trainer](https://hacks.davidjarman.net/interval-trainer)
+
+### Friend Picker Wheel
+
+Spin a colorful wheel to randomly choose which friend to call. Add friends, spin the wheel, and enjoy the confetti celebration!
+
+Link: [friend-picker-wheel](https://hacks.davidjarman.net/friend-picker-wheel)
