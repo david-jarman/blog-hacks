@@ -95,6 +95,24 @@
             background: #c0392b;
         }
 
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-edit:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .danger-zone {
             margin-top: 30px;
             padding-top: 20px;
@@ -165,6 +183,61 @@
             justify-content: flex-end;
         }
 
+        .friends-modal-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+
+        .friend-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+
+        .friend-item:hover {
+            background: #e9ecef;
+        }
+
+        .friend-item-name {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .friend-item-remove {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .friend-item-remove:hover {
+            background: #c0392b;
+        }
+
+        .modal-content.edit-modal {
+            max-width: 500px;
+        }
+
+        .edit-modal .modal-header {
+            color: #3498db;
+        }
+
+        .friends-count {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+
         .btn-secondary {
             background: #95a5a6;
             color: white;
@@ -193,36 +266,6 @@
             cursor: not-allowed;
         }
 
-        .friends-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .friend-tag {
-            background: #f0f0f0;
-            padding: 8px 15px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .friend-tag button {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-        }
 
         .wheel-container {
             position: relative;
@@ -339,9 +382,8 @@
             <div class="input-group">
                 <input type="text" id="friendInput" placeholder="Enter friend's name..." />
                 <button class="btn-primary" onclick="addFriend()">Add Friend</button>
+                <button class="btn-edit" id="editBtn" onclick="showEditModal()">Edit Friends</button>
             </div>
-
-            <div class="friends-list" id="friendsList"></div>
         </div>
 
         <div id="wheelSection">
@@ -382,6 +424,23 @@
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="hideConfirmModal()">Cancel</button>
                 <button class="btn-danger" onclick="confirmClearAll()">Yes, Delete All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Friends Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content edit-modal">
+            <div class="modal-header">
+                <span style="font-size: 30px;">✏️</span>
+                <h2>Edit Friends</h2>
+            </div>
+            <div class="modal-body">
+                <div class="friends-count" id="friendsCount"></div>
+                <div class="friends-modal-list" id="friendsModalList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideEditModal()">Close</button>
             </div>
         </div>
     </div>
@@ -445,28 +504,58 @@
             hideConfirmModal();
         }
 
+        // Show edit modal
+        function showEditModal() {
+            document.getElementById('editModal').style.display = 'block';
+            updateEditModal();
+        }
+
+        // Hide edit modal
+        function hideEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Update edit modal content
+        function updateEditModal() {
+            const friendsCount = document.getElementById('friendsCount');
+            const friendsModalList = document.getElementById('friendsModalList');
+
+            friendsCount.textContent = `${friends.length} friend${friends.length !== 1 ? 's' : ''} in your list`;
+
+            if (friends.length === 0) {
+                friendsModalList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No friends added yet.</p>';
+            } else {
+                friendsModalList.innerHTML = friends.map(friend => `
+                    <div class="friend-item">
+                        <span class="friend-item-name">${friend}</span>
+                        <button class="friend-item-remove" onclick="removeFriend('${friend.replace(/'/g, "\\'")}')">Remove</button>
+                    </div>
+                `).join('');
+            }
+        }
+
         // Close modal when clicking outside of it
         window.onclick = function(event) {
-            const modal = document.getElementById('confirmModal');
-            if (event.target === modal) {
+            const confirmModal = document.getElementById('confirmModal');
+            const editModal = document.getElementById('editModal');
+
+            if (event.target === confirmModal) {
                 hideConfirmModal();
+            }
+            if (event.target === editModal) {
+                hideEditModal();
             }
         }
 
         // Update the UI
         function updateUI() {
-            const friendsList = document.getElementById('friendsList');
             const wheelSection = document.getElementById('wheelSection');
             const emptyState = document.getElementById('emptyState');
             const spinBtn = document.getElementById('spinBtn');
+            const editBtn = document.getElementById('editBtn');
 
-            // Update friends list
-            friendsList.innerHTML = friends.map(friend => `
-                <div class="friend-tag">
-                    <span>${friend}</span>
-                    <button onclick="removeFriend('${friend.replace(/'/g, "\\'")}')">×</button>
-                </div>
-            `).join('');
+            // Update edit button state
+            editBtn.disabled = friends.length === 0;
 
             // Show/hide wheel
             if (friends.length === 0) {
@@ -479,6 +568,11 @@
             }
 
             spinBtn.disabled = friends.length === 0 || isSpinning;
+
+            // Update edit modal if it's open
+            if (document.getElementById('editModal').style.display === 'block') {
+                updateEditModal();
+            }
         }
 
         // Draw the wheel
