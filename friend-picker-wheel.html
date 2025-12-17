@@ -431,7 +431,7 @@
             document.getElementById('result').textContent = '';
 
             const wheel = document.getElementById('wheel');
-            const spins = 5 + Math.random() * 5; // 5-10 full rotations
+            const spins = Math.floor(5 + Math.random() * 6); // 5-10 full rotations (integer)
             const extraDegrees = Math.random() * 360;
             const totalRotation = spins * 360 + extraDegrees;
 
@@ -446,20 +446,21 @@
 
             // Show result after animation
             setTimeout(() => {
+                // Reset wheel rotation immediately (invisibly) for next spin
+                wheel.style.transition = 'none';
+                wheel.style.transform = `rotate(${extraDegrees % 360}deg)`;
+
+                // Re-enable transition after a brief moment
+                setTimeout(() => {
+                    wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+                }, 50);
+
+                // Show result
                 document.getElementById('result').textContent = `Call ${selectedFriend}! 📞`;
                 document.getElementById('result').classList.add('show');
                 createConfetti();
                 isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
-
-                // Reset wheel rotation for next spin
-                setTimeout(() => {
-                    wheel.style.transition = 'none';
-                    wheel.style.transform = `rotate(${extraDegrees % 360}deg)`;
-                    setTimeout(() => {
-                        wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
-                    }, 50);
-                }, 500);
             }, 4000);
         }
 
