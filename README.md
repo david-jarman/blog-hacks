@@ -32,3 +32,9 @@ Link: [interval-trainer](https://hacks.davidjarman.net/interval-trainer)
 Spin a colorful wheel to randomly choose which friend to call. Add friends, spin the wheel, and enjoy the confetti celebration!
 
 Link: [friend-picker-wheel](https://hacks.davidjarman.net/friend-picker-wheel)
+
+### Pixel Art Converter
+
+Convert any image to pixel art with a customizable output size. Upload an image, crop it to a square, and generate pixel art from 8x8 to 256x256 pixels. All processing happens locally in your browser.
+
+Link: [pixel-art-converter](https://hacks.davidjarman.net/pixel-art-converter)
