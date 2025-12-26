@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yoto Player Image Creator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #5568d3;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.9em;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .control-group input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            width: 120px;
+        }
+
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .canvas-container {
+            position: relative;
+            margin-bottom: 30px;
+            display: none;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .canvas-container.active {
+            display: flex;
+        }
+
+        #imageCanvas {
+            max-width: 100%;
+            height: auto;
+            cursor: crosshair;
+            border: 2px solid #ddd;
+            background: #fff;
+        }
+
+        .crop-overlay {
+            position: absolute;
+            border: 2px solid #667eea;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+            cursor: move;
+            pointer-events: none;
+        }
+
+        .crop-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border: 2px solid white;
+            border-radius: 50%;
+            pointer-events: all;
+        }
+
+        .crop-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+        .crop-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+        .crop-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .crop-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .result-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .preview-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .preview-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .preview-box h3 {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        #resultCanvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .preview-scaled {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background:
+                linear-gradient(45deg, #ccc 25%, transparent 25%),
+                linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #ccc 75%),
+                linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            padding: 20px;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .instructions p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .instructions p:last-child {
+            margin-bottom: 0;
+        }
+
+        .helpful-links {
+            background: #e8f4f8;
+            border-left: 4px solid #48bb78;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .helpful-links p {
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .helpful-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .helpful-links a:hover {
+            text-decoration: underline;
+        }
+
+        .helpful-links ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .helpful-links li {
+            margin-bottom: 5px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Yoto Player Image Creator</h1>
+        <p class="subtitle">Create custom images for Yoto Player cards</p>
+
+        <div class="instructions">
+            <p><strong>How to use:</strong></p>
+            <p>1. Upload an image using the button below</p>
+            <p>2. Click and drag to create a square selection area (drag to move, resize from corners)</p>
+            <p>3. Set your desired output size (e.g., 16x16, 32x32)</p>
+            <p>4. Click "Create Image" and download your result!</p>
+        </div>
+
+        <div class="helpful-links">
+            <p><strong>Helpful Links:</strong></p>
+            <ul>
+                <li><a href="https://my.yotoplay.com" target="_blank" rel="noopener noreferrer">Yoto Player Dashboard</a> - Update your playlists and cards</li>
+                <li><a href="https://www.pixilart.com/draw" target="_blank" rel="noopener noreferrer">Pixilart</a> - Make further edits to your pixel art</li>
+            </ul>
+        </div>
+
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <input type="file" id="imageInput" accept="image/*">
+                <label for="imageInput" class="file-input-label">Choose Image</label>
+            </div>
+            <span id="fileName" style="margin-left: 15px; color: #666;"></span>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="outputSize">Output Size (px)</label>
+                <input type="number" id="outputSize" value="16" min="8" max="256">
+            </div>
+            <div class="control-group">
+                <label>Crop Size</label>
+                <input type="text" id="cropSize" readonly value="Not set">
+            </div>
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="imageCanvas"></canvas>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" id="convertBtn" disabled>Create Image</button>
+            <button class="btn-secondary" id="downloadBtn" disabled>Download PNG</button>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <h2>Result</h2>
+            <div class="preview-container">
+                <div class="preview-box">
+                    <h3>Actual Size</h3>
+                    <canvas id="resultCanvas"></canvas>
+                </div>
+                <div class="preview-box">
+                    <h3>Scaled Preview (10x)</h3>
+                    <div class="preview-scaled">
+                        <canvas id="previewCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const resultCanvas = document.getElementById('resultCanvas');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const resultSection = document.getElementById('resultSection');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const outputSizeInput = document.getElementById('outputSize');
+        const cropSizeDisplay = document.getElementById('cropSize');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        const ctx = imageCanvas.getContext('2d');
+        let img = new Image();
+        let cropBox = null;
+        let isCreating = false;
+        let isDragging = false;
+        let isResizing = false;
+        let dragStart = { x: 0, y: 0 };
+        let activeHandle = null;
+        let canvasScale = 1;
+
+        imageInput.addEventListener('change', handleImageUpload);
+        convertBtn.addEventListener('click', convertToPixelArt);
+        downloadBtn.addEventListener('click', downloadImage);
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileNameDisplay.textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                img.onload = function() {
+                    setupCanvas();
+                    convertBtn.disabled = false;
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setupCanvas() {
+            // Reset crop box for new image
+            cropBox = null;
+            convertBtn.disabled = true;
+            resultSection.classList.remove('active');
+            downloadBtn.disabled = true;
+
+            // Make container visible first so we can measure it
+            canvasContainer.classList.add('active');
+
+            // Calculate canvas size to fit container while maintaining aspect ratio
+            const maxWidth = Math.max(100, canvasContainer.clientWidth - 40);
+            const maxHeight = 500;
+
+            console.log('maxWidth:', maxWidth, 'maxHeight:', maxHeight);
+            console.log('img.width:', img.width, 'img.height:', img.height);
+
+            let canvasWidth = img.width;
+            let canvasHeight = img.height;
+
+            if (canvasWidth > maxWidth) {
+                canvasHeight = (maxWidth / canvasWidth) * canvasHeight;
+                canvasWidth = maxWidth;
+            }
+
+            console.log('After width constraint - canvasWidth:', canvasWidth, 'canvasHeight:', canvasHeight);
+
+            if (canvasHeight > maxHeight) {
+                canvasWidth = (maxHeight / canvasHeight) * canvasWidth;
+                canvasHeight = maxHeight;
+            }
+
+            console.log('After height constraint - canvasWidth:', canvasWidth, 'canvasHeight:', canvasHeight);
+
+            canvasScale = canvasWidth / img.width;
+            console.log('canvasScale calculation:', canvasWidth, '/', img.width, '=', canvasScale);
+
+            imageCanvas.width = canvasWidth;
+            imageCanvas.height = canvasHeight;
+
+            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+
+            // Add event listeners for cropping (remove old ones first to avoid duplicates)
+            imageCanvas.removeEventListener('mousedown', handleMouseDown);
+            imageCanvas.removeEventListener('mousemove', handleMouseMove);
+            imageCanvas.removeEventListener('mouseup', handleMouseUp);
+            imageCanvas.removeEventListener('mouseleave', handleMouseUp);
+
+            imageCanvas.addEventListener('mousedown', handleMouseDown);
+            imageCanvas.addEventListener('mousemove', handleMouseMove);
+            imageCanvas.addEventListener('mouseup', handleMouseUp);
+            imageCanvas.addEventListener('mouseleave', handleMouseUp);
+        }
+
+        function drawCropBox() {
+            // Redraw image
+            ctx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+
+            // If no crop box or size is 0, just show the image
+            if (!cropBox || cropBox.size === 0) {
+                return;
+            }
+
+            // Draw darkened overlay
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
+
+            // Clear crop area and redraw the image portion there
+            ctx.clearRect(cropBox.x, cropBox.y, cropBox.size, cropBox.size);
+
+            // Calculate source coordinates from original image
+            const srcX = cropBox.x / canvasScale;
+            const srcY = cropBox.y / canvasScale;
+            const srcSize = cropBox.size / canvasScale;
+
+            // Draw the cropped portion of the original image
+            ctx.drawImage(img,
+                srcX, srcY, srcSize, srcSize,
+                cropBox.x, cropBox.y, cropBox.size, cropBox.size
+            );
+
+            // Draw crop box border
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cropBox.x, cropBox.y, cropBox.size, cropBox.size);
+
+            // Draw corner handles
+            const handleSize = 12;
+            ctx.fillStyle = '#667eea';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+
+            const corners = [
+                { x: cropBox.x, y: cropBox.y },
+                { x: cropBox.x + cropBox.size, y: cropBox.y },
+                { x: cropBox.x, y: cropBox.y + cropBox.size },
+                { x: cropBox.x + cropBox.size, y: cropBox.y + cropBox.size }
+            ];
+
+            corners.forEach(corner => {
+                ctx.beginPath();
+                ctx.arc(corner.x, corner.y, handleSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        function handleMouseDown(e) {
+            const rect = imageCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // If no crop box exists, start creating one
+            if (!cropBox) {
+                isCreating = true;
+                dragStart = { x, y };
+                cropBox = { x, y, size: 0 };
+                return;
+            }
+
+            // Check if clicking on a handle
+            const handleSize = 12;
+            const handles = [
+                { name: 'nw', x: cropBox.x, y: cropBox.y },
+                { name: 'ne', x: cropBox.x + cropBox.size, y: cropBox.y },
+                { name: 'sw', x: cropBox.x, y: cropBox.y + cropBox.size },
+                { name: 'se', x: cropBox.x + cropBox.size, y: cropBox.y + cropBox.size }
+            ];
+
+            for (let handle of handles) {
+                const dist = Math.sqrt(Math.pow(x - handle.x, 2) + Math.pow(y - handle.y, 2));
+                if (dist <= handleSize) {
+                    isResizing = true;
+                    activeHandle = handle.name;
+                    dragStart = { x, y };
+                    return;
+                }
+            }
+
+            // Check if clicking inside crop box
+            if (x >= cropBox.x && x <= cropBox.x + cropBox.size &&
+                y >= cropBox.y && y <= cropBox.y + cropBox.size) {
+                isDragging = true;
+                dragStart = { x: x - cropBox.x, y: y - cropBox.y };
+            }
+        }
+
+        function handleMouseMove(e) {
+            const rect = imageCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (isCreating) {
+                // Calculate the bounds of the rectangle from start to current point
+                const minX = Math.min(dragStart.x, x);
+                const minY = Math.min(dragStart.y, y);
+                const maxX = Math.max(dragStart.x, x);
+                const maxY = Math.max(dragStart.y, y);
+
+                // Make it square by using the larger dimension
+                let width = maxX - minX;
+                let height = maxY - minY;
+                let size = Math.max(width, height);
+
+                // Start from the drag start point and expand based on direction
+                let cropX = dragStart.x;
+                let cropY = dragStart.y;
+
+                // Adjust position based on drag direction to make it square
+                if (x < dragStart.x) cropX = dragStart.x - size;
+                if (y < dragStart.y) cropY = dragStart.y - size;
+
+                // Constrain to canvas bounds
+                if (cropX < 0) {
+                    cropX = 0;
+                }
+                if (cropY < 0) {
+                    cropY = 0;
+                }
+                if (cropX + size > imageCanvas.width) {
+                    cropX = imageCanvas.width - size;
+                }
+                if (cropY + size > imageCanvas.height) {
+                    cropY = imageCanvas.height - size;
+                }
+
+                // Make sure we're still in bounds
+                cropX = Math.max(0, cropX);
+                cropY = Math.max(0, cropY);
+                size = Math.min(size, imageCanvas.width - cropX, imageCanvas.height - cropY);
+                size = Math.max(0, size);
+
+                cropBox.x = cropX;
+                cropBox.y = cropY;
+                cropBox.size = size;
+
+                drawCropBox();
+            } else if (isResizing && activeHandle) {
+                resizeCropBox(x, y);
+                drawCropBox();
+                updateCropSizeDisplay();
+            } else if (isDragging) {
+                cropBox.x = Math.max(0, Math.min(imageCanvas.width - cropBox.size, x - dragStart.x));
+                cropBox.y = Math.max(0, Math.min(imageCanvas.height - cropBox.size, y - dragStart.y));
+                drawCropBox();
+            }
+        }
+
+        function handleMouseUp() {
+            if (isCreating) {
+                isCreating = false;
+                if (cropBox && cropBox.size > 0) {
+                    updateCropSizeDisplay();
+                    convertBtn.disabled = false;
+                }
+            }
+            isDragging = false;
+            isResizing = false;
+            activeHandle = null;
+        }
+
+        function resizeCropBox(mouseX, mouseY) {
+            let newSize;
+            let newX = cropBox.x;
+            let newY = cropBox.y;
+
+            switch(activeHandle) {
+                case 'nw':
+                    newSize = Math.max(Math.abs(cropBox.x + cropBox.size - mouseX),
+                                      Math.abs(cropBox.y + cropBox.size - mouseY));
+                    newX = cropBox.x + cropBox.size - newSize;
+                    newY = cropBox.y + cropBox.size - newSize;
+                    break;
+                case 'ne':
+                    newSize = Math.max(Math.abs(mouseX - cropBox.x),
+                                      Math.abs(cropBox.y + cropBox.size - mouseY));
+                    newY = cropBox.y + cropBox.size - newSize;
+                    break;
+                case 'sw':
+                    newSize = Math.max(Math.abs(cropBox.x + cropBox.size - mouseX),
+                                      Math.abs(mouseY - cropBox.y));
+                    newX = cropBox.x + cropBox.size - newSize;
+                    break;
+                case 'se':
+                    newSize = Math.max(Math.abs(mouseX - cropBox.x),
+                                      Math.abs(mouseY - cropBox.y));
+                    break;
+            }
+
+            // Constrain to canvas bounds
+            newSize = Math.max(50, newSize);
+            newX = Math.max(0, Math.min(imageCanvas.width - newSize, newX));
+            newY = Math.max(0, Math.min(imageCanvas.height - newSize, newY));
+
+            if (newX + newSize <= imageCanvas.width && newY + newSize <= imageCanvas.height) {
+                cropBox.x = newX;
+                cropBox.y = newY;
+                cropBox.size = newSize;
+            }
+        }
+
+        function updateCropSizeDisplay() {
+            if (!cropBox || cropBox.size <= 0) {
+                cropSizeDisplay.value = 'Not set';
+                return;
+            }
+            const actualSize = Math.round(cropBox.size / canvasScale);
+            console.log('cropBox.size:', cropBox.size, 'canvasScale:', canvasScale, 'actualSize:', actualSize);
+            cropSizeDisplay.value = `${actualSize} x ${actualSize}px`;
+        }
+
+        function convertToPixelArt() {
+            if (!cropBox || cropBox.size <= 0) {
+                alert('Please create a crop selection first by dragging on the image.');
+                return;
+            }
+
+            const outputSize = parseInt(outputSizeInput.value);
+
+            // Create temporary canvas for cropped area
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // Get actual crop dimensions from original image
+            const cropX = cropBox.x / canvasScale;
+            const cropY = cropBox.y / canvasScale;
+            const cropSize = cropBox.size / canvasScale;
+
+            tempCanvas.width = cropSize;
+            tempCanvas.height = cropSize;
+
+            // Draw cropped area
+            tempCtx.drawImage(img, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
+
+            // Resize to pixel art size
+            resultCanvas.width = outputSize;
+            resultCanvas.height = outputSize;
+            const resultCtx = resultCanvas.getContext('2d');
+            resultCtx.imageSmoothingEnabled = false;
+            resultCtx.drawImage(tempCanvas, 0, 0, outputSize, outputSize);
+
+            // Create scaled preview
+            const scale = 10;
+            previewCanvas.width = outputSize * scale;
+            previewCanvas.height = outputSize * scale;
+            const previewCtx = previewCanvas.getContext('2d');
+            previewCtx.imageSmoothingEnabled = false;
+            previewCtx.drawImage(resultCanvas, 0, 0, outputSize * scale, outputSize * scale);
+
+            resultSection.classList.add('active');
+            downloadBtn.disabled = false;
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            const outputSize = parseInt(outputSizeInput.value);
+            link.download = `yoto-player-${outputSize}x${outputSize}.png`;
+            link.href = resultCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

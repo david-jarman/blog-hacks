@@ -32,3 +32,9 @@ Link: [interval-trainer](https://hacks.davidjarman.net/interval-trainer)
 Spin a colorful wheel to randomly choose which friend to call. Add friends, spin the wheel, and enjoy the confetti celebration!
 
 Link: [friend-picker-wheel](https://hacks.davidjarman.net/friend-picker-wheel)
+
+### Yoto Player Image Creator
+
+Create custom images for Yoto Player cards. Upload an image, crop it to a square, and convert it to the optimal pixel art format. All processing happens locally in your browser.
+
+Link: [yoto-player-image-creator](https://hacks.davidjarman.net/yoto-player-image-creator)
