@@ -296,7 +296,7 @@
         <div class="instructions">
             <p><strong>How to use:</strong></p>
             <p>1. Upload an image using the button below</p>
-            <p>2. Drag the crop box to select a square area (resize from corners)</p>
+            <p>2. Click and drag to create a square selection area (drag to move, resize from corners)</p>
             <p>3. Set your desired output size (e.g., 16x16, 32x32)</p>
             <p>4. Click "Convert to Pixel Art" and download your result!</p>
         </div>
@@ -361,7 +361,8 @@
 
         const ctx = imageCanvas.getContext('2d');
         let img = new Image();
-        let cropBox = { x: 0, y: 0, size: 0 };
+        let cropBox = null;
+        let isCreating = false;
         let isDragging = false;
         let isResizing = false;
         let dragStart = { x: 0, y: 0 };
@@ -390,9 +391,21 @@
         }
 
         function setupCanvas() {
+            // Reset crop box for new image
+            cropBox = null;
+            convertBtn.disabled = true;
+            resultSection.classList.remove('active');
+            downloadBtn.disabled = true;
+
+            // Make container visible first so we can measure it
+            canvasContainer.classList.add('active');
+
             // Calculate canvas size to fit container while maintaining aspect ratio
-            const maxWidth = canvasContainer.clientWidth - 40;
+            const maxWidth = Math.max(100, canvasContainer.clientWidth - 40);
             const maxHeight = 500;
+
+            console.log('maxWidth:', maxWidth, 'maxHeight:', maxHeight);
+            console.log('img.width:', img.width, 'img.height:', img.height);
 
             let canvasWidth = img.width;
             let canvasHeight = img.height;
@@ -402,29 +415,29 @@
                 canvasWidth = maxWidth;
             }
 
+            console.log('After width constraint - canvasWidth:', canvasWidth, 'canvasHeight:', canvasHeight);
+
             if (canvasHeight > maxHeight) {
                 canvasWidth = (maxHeight / canvasHeight) * canvasWidth;
                 canvasHeight = maxHeight;
             }
 
+            console.log('After height constraint - canvasWidth:', canvasWidth, 'canvasHeight:', canvasHeight);
+
             canvasScale = canvasWidth / img.width;
+            console.log('canvasScale calculation:', canvasWidth, '/', img.width, '=', canvasScale);
 
             imageCanvas.width = canvasWidth;
             imageCanvas.height = canvasHeight;
 
             ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
-            // Initialize crop box to center square
-            const minDim = Math.min(canvasWidth, canvasHeight);
-            cropBox.size = Math.floor(minDim * 0.6);
-            cropBox.x = Math.floor((canvasWidth - cropBox.size) / 2);
-            cropBox.y = Math.floor((canvasHeight - cropBox.size) / 2);
+            // Add event listeners for cropping (remove old ones first to avoid duplicates)
+            imageCanvas.removeEventListener('mousedown', handleMouseDown);
+            imageCanvas.removeEventListener('mousemove', handleMouseMove);
+            imageCanvas.removeEventListener('mouseup', handleMouseUp);
+            imageCanvas.removeEventListener('mouseleave', handleMouseUp);
 
-            drawCropBox();
-            updateCropSizeDisplay();
-            canvasContainer.classList.add('active');
-
-            // Add event listeners for cropping
             imageCanvas.addEventListener('mousedown', handleMouseDown);
             imageCanvas.addEventListener('mousemove', handleMouseMove);
             imageCanvas.addEventListener('mouseup', handleMouseUp);
@@ -435,15 +448,26 @@
             // Redraw image
             ctx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
 
+            // If no crop box or size is 0, just show the image
+            if (!cropBox || cropBox.size === 0) {
+                return;
+            }
+
             // Draw darkened overlay
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
 
-            // Clear crop area
+            // Clear crop area and redraw the image portion there
             ctx.clearRect(cropBox.x, cropBox.y, cropBox.size, cropBox.size);
+
+            // Calculate source coordinates from original image
+            const srcX = cropBox.x / canvasScale;
+            const srcY = cropBox.y / canvasScale;
+            const srcSize = cropBox.size / canvasScale;
+
+            // Draw the cropped portion of the original image
             ctx.drawImage(img,
-                cropBox.x / canvasScale, cropBox.y / canvasScale,
-                cropBox.size / canvasScale, cropBox.size / canvasScale,
+                srcX, srcY, srcSize, srcSize,
                 cropBox.x, cropBox.y, cropBox.size, cropBox.size
             );
 
@@ -478,6 +502,14 @@
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
+            // If no crop box exists, start creating one
+            if (!cropBox) {
+                isCreating = true;
+                dragStart = { x, y };
+                cropBox = { x, y, size: 0 };
+                return;
+            }
+
             // Check if clicking on a handle
             const handleSize = 12;
             const handles = [
@@ -510,7 +542,52 @@
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            if (isResizing && activeHandle) {
+            if (isCreating) {
+                // Calculate the bounds of the rectangle from start to current point
+                const minX = Math.min(dragStart.x, x);
+                const minY = Math.min(dragStart.y, y);
+                const maxX = Math.max(dragStart.x, x);
+                const maxY = Math.max(dragStart.y, y);
+
+                // Make it square by using the larger dimension
+                let width = maxX - minX;
+                let height = maxY - minY;
+                let size = Math.max(width, height);
+
+                // Start from the drag start point and expand based on direction
+                let cropX = dragStart.x;
+                let cropY = dragStart.y;
+
+                // Adjust position based on drag direction to make it square
+                if (x < dragStart.x) cropX = dragStart.x - size;
+                if (y < dragStart.y) cropY = dragStart.y - size;
+
+                // Constrain to canvas bounds
+                if (cropX < 0) {
+                    cropX = 0;
+                }
+                if (cropY < 0) {
+                    cropY = 0;
+                }
+                if (cropX + size > imageCanvas.width) {
+                    cropX = imageCanvas.width - size;
+                }
+                if (cropY + size > imageCanvas.height) {
+                    cropY = imageCanvas.height - size;
+                }
+
+                // Make sure we're still in bounds
+                cropX = Math.max(0, cropX);
+                cropY = Math.max(0, cropY);
+                size = Math.min(size, imageCanvas.width - cropX, imageCanvas.height - cropY);
+                size = Math.max(0, size);
+
+                cropBox.x = cropX;
+                cropBox.y = cropY;
+                cropBox.size = size;
+
+                drawCropBox();
+            } else if (isResizing && activeHandle) {
                 resizeCropBox(x, y);
                 drawCropBox();
                 updateCropSizeDisplay();
@@ -522,6 +599,13 @@
         }
 
         function handleMouseUp() {
+            if (isCreating) {
+                isCreating = false;
+                if (cropBox && cropBox.size > 0) {
+                    updateCropSizeDisplay();
+                    convertBtn.disabled = false;
+                }
+            }
             isDragging = false;
             isResizing = false;
             activeHandle = null;
@@ -568,11 +652,21 @@
         }
 
         function updateCropSizeDisplay() {
+            if (!cropBox || cropBox.size <= 0) {
+                cropSizeDisplay.value = 'Not set';
+                return;
+            }
             const actualSize = Math.round(cropBox.size / canvasScale);
+            console.log('cropBox.size:', cropBox.size, 'canvasScale:', canvasScale, 'actualSize:', actualSize);
             cropSizeDisplay.value = `${actualSize} x ${actualSize}px`;
         }
 
         function convertToPixelArt() {
+            if (!cropBox || cropBox.size <= 0) {
+                alert('Please create a crop selection first by dragging on the image.');
+                return;
+            }
+
             const outputSize = parseInt(outputSizeInput.value);
 
             // Create temporary canvas for cropped area
