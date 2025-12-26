@@ -33,8 +33,8 @@ Spin a colorful wheel to randomly choose which friend to call. Add friends, spin
 
 Link: [friend-picker-wheel](https://hacks.davidjarman.net/friend-picker-wheel)
 
-### Pixel Art Converter
+### Yoto Player Image Creator
 
-Convert any image to pixel art with a customizable output size. Upload an image, crop it to a square, and generate pixel art from 8x8 to 256x256 pixels. All processing happens locally in your browser.
+Create custom images for Yoto Player cards. Upload an image, crop it to a square, and convert it to the optimal pixel art format. All processing happens locally in your browser.
 
-Link: [pixel-art-converter](https://hacks.davidjarman.net/pixel-art-converter)
+Link: [yoto-player-image-creator](https://hacks.davidjarman.net/yoto-player-image-creator)

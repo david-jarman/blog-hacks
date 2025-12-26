@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image to Pixel Art Converter</title>
+    <title>Yoto Player Image Creator</title>
     <style>
         * {
             margin: 0;
@@ -290,15 +290,15 @@
 </head>
 <body>
     <div class="container">
-        <h1>Image to Pixel Art Converter</h1>
-        <p class="subtitle">Convert any image to pixel art with customizable size</p>
+        <h1>Yoto Player Image Creator</h1>
+        <p class="subtitle">Create custom images for Yoto Player cards</p>
 
         <div class="instructions">
             <p><strong>How to use:</strong></p>
             <p>1. Upload an image using the button below</p>
             <p>2. Click and drag to create a square selection area (drag to move, resize from corners)</p>
             <p>3. Set your desired output size (e.g., 16x16, 32x32)</p>
-            <p>4. Click "Convert to Pixel Art" and download your result!</p>
+            <p>4. Click "Create Image" and download your result!</p>
         </div>
 
         <div class="upload-section">
@@ -325,7 +325,7 @@
         </div>
 
         <div class="button-group">
-            <button class="btn-primary" id="convertBtn" disabled>Convert to Pixel Art</button>
+            <button class="btn-primary" id="convertBtn" disabled>Create Image</button>
             <button class="btn-secondary" id="downloadBtn" disabled>Download PNG</button>
         </div>
 
@@ -706,7 +706,7 @@
         function downloadImage() {
             const link = document.createElement('a');
             const outputSize = parseInt(outputSizeInput.value);
-            link.download = `pixel-art-${outputSize}x${outputSize}.png`;
+            link.download = `yoto-player-${outputSize}x${outputSize}.png`;
             link.href = resultCanvas.toDataURL('image/png');
             link.click();
         }
